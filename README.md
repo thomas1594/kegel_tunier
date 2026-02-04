@@ -1,149 +1,168 @@
-# 🎳 Kegelturnier - Live Auswertung
+# 🎳 Bowling Tournament - Live Scoring
 
-Eine Streamlit-basierte Web-Anwendung zur Verwaltung und Live-Auswertung von Kegelturnieren mit Vorrunde, Halbfinale und Finale.
+A Streamlit-based web application for managing and live-scoring bowling tournaments with preliminary round, semifinals, and finals.
 
 ## 📋 Features
 
-### Turnierverwaltung
-- **Vorrunde**: 10 Teams à 5 Spieler mit paralleler 2-Bahnen-Eingabe
-- **Halbfinale**: Top 4 Teams (1. vs 3., 2. vs 4.)
-- **Finale**: Gewinner der beiden Halbfinals
-- **Live-Rankings**: Automatische Berechnung und Sortierung
+### Tournament Management
+- **Preliminary Round**: 10 teams with 5 players each, parallel 2-lane input
+- **Semifinals**: Top 4 teams (1st vs 3rd, 2nd vs 4th)
+- **Finals**: Winners of both semifinals
+- **Live Rankings**: Automatic calculation and sorting
+- **Auto-Save**: SQLite database ensures no data loss
 
-### Eingabemodus
-- Strukturierte Eingabe: Erst alle "Volle", dann alle "Abräumen" pro Team
-- Je 10 Würfe pro Kategorie (5 Würfe pro Bahn angezeigt)
-- Eingeklappt standardmäßig für bessere Übersicht
+### Input Mode
+- Structured input: All "Volle" (full pins) first, then all "Abräumen" (spare attempts) per team
+- 10 throws per category (5 throws per lane displayed)
+- Collapsed by default for better overview
 
-### Auswertungen
-- 🏅 **Turnier-Platzierung**: Top 4 Teams mit Holzzahlen
-- 🏆 **Teamwertung**: Komplette Rangliste aller Teams
-- 🎯 **Beste Einzelergebnisse**:
-  - Bester Spieler (gesamt)
-  - Beste Frau
-  - Beste Volle
-- 🥇 **Top 10 Spieler**: Individuelle Bestenliste
+### Statistics & Rankings
+- 🏅 **Tournament Placement**: Top 4 teams with scores
+- 🏆 **Team Rankings**: Complete ranking of all teams
+- 🎯 **Best Individual Results**:
+  - Best Player (overall)
+  - Best Female Player
+  - Best "Volle" (full pins)
+- 🥇 **Top 10 Players**: Individual leaderboard
 
-### Verwaltung
-- Team- und Spielernamen bearbeiten
-- Geschlechter-Zuordnung (m/w)
-- Excel-Export (lokal & Download)
-- Live-Speicherung aller Änderungen
+### Data Management
+- Edit team and player names
+- Gender assignment (m/f)
+- Excel export (local file & browser download)
+- **Auto-save**: Every throw is automatically saved to SQLite database
+- **Crash-proof**: Data persists across sessions and browser refreshes
+- Reset tournament for new competitions
 
 ## 🚀 Installation
 
-### Voraussetzungen
-- Python 3.8 oder höher
+### Prerequisites
+- Python 3.8 or higher
 
 ### Setup
 ```bash
-# Repository klonen
+# Clone repository
 git clone https://github.com/thomas1594/kegel_tunier.git
 cd kegel_tunier
 
-# Virtuelle Umgebung erstellen (optional, empfohlen)
+# Create virtual environment (optional, recommended)
 python -m venv .venv
 source .venv/bin/activate  # Linux/Mac
-# oder
+# or
 .venv\Scripts\activate  # Windows
 
-# Abhängigkeiten installieren
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-## 💻 Nutzung
+## 💻 Usage
 
-### Anwendung starten
+### Start Application
 ```bash
 streamlit run kegel.py
 ```
 
-Die Anwendung öffnet sich automatisch im Browser unter `http://localhost:8501`
+The application opens automatically in your browser at `http://localhost:8501`
 
 ### Workflow
 
-1. **Vorrunde eingeben**
-   - Wähle 2 Teams für Bahn 1 und Bahn 2
-   - Expandiere "Auf die Vollen" und gib alle Würfe ein
-   - Expandiere "Abräumen" und gib alle Würfe ein
-   - Wiederhole für alle Teams
+1. **Enter Preliminary Round Data**
+   - Select 2 teams for Lane 1 and Lane 2
+   - Expand "Auf die Vollen" and enter all throws
+   - Expand "Abräumen" and enter all throws
+   - Data is automatically saved after each throw
+   - Repeat for all teams
 
-2. **Halbfinale durchführen**
-   - Top 4 Teams werden automatisch qualifiziert
-   - HF1: 1. Platz vs 3. Platz
-   - HF2: 2. Platz vs 4. Platz
-   - Eingabe wie in der Vorrunde
+2. **Conduct Semifinals**
+   - Top 4 teams are automatically qualified
+   - SF1: 1st place vs 3rd place
+   - SF2: 2nd place vs 4th place
+   - Input same as preliminary round
 
-3. **Finale austragen**
-   - Gewinner der beiden Halbfinals treten an
-   - Eingabe wie zuvor
+3. **Play Finals**
+   - Winners of both semifinals compete
+   - Input same as before
 
-4. **Auswertung ansehen**
-   - Platzierungen 1-4 prominent angezeigt
-   - Vollständige Rankings und Statistiken
-   - Top 10 Spieler
+4. **View Statistics**
+   - Placements 1-4 prominently displayed
+   - Complete rankings and statistics
+   - Top 10 players
 
-5. **Daten exportieren**
-   - "💾 Lokal Speichern" für lokale Datei
-   - "📥 Excel Download" für Browser-Download
+5. **Export Data**
+   - "💾 Lokal Speichern" for local Excel file
+   - "📥 Excel Download" for browser download
+   - "🔄 Neues Turnier" to reset and start fresh
 
-## 📁 Projektstruktur
+## 📁 Project Structure
 
 ```
 kegel_tunier/
-├── kegel.py              # Hauptanwendung (Streamlit UI)
-├── functions.py          # Hilfsfunktionen
-├── requirements.txt      # Python-Abhängigkeiten
-└── README.md            # Diese Datei
+├── kegel.py              # Main application (Streamlit UI)
+├── functions.py          # Helper functions
+├── requirements.txt      # Python dependencies
+├── kegelturnier.db       # SQLite database (auto-created)
+└── README.md            # This file
 ```
 
-## 🔧 Technische Details
+## 🔧 Technical Details
 
-### Abhängigkeiten
-- **streamlit**: Web-Framework für die UI
-- **pandas**: Datenverarbeitung und -verwaltung
-- **openpyxl**: Excel-Export-Funktionalität
+### Dependencies
+- **streamlit**: Web framework for UI
+- **pandas**: Data processing and management
+- **openpyxl**: Excel export functionality
+- **sqlite3**: Database (included in Python standard library)
 
-### Datenstruktur
-- **Session State**: Persistente Datenspeicherung während der Sitzung
-- **DataFrame**: Spielerdaten (50 Spieler, 10 Teams)
-- **KO-Daten**: Separate Struktur für Halbfinale und Finale
+### Data Structure
+- **SQLite Database**: Persistent storage with auto-save
+  - `players` table: Preliminary round data
+  - `ko_data` table: Semifinals and finals data
+  - `tournaments` table: Tournament metadata
+- **Session State**: In-memory data during active session
+- **DataFrame**: Player data (50 players, 10 teams)
+- **KO Data**: Separate structure for semifinals and finals
 
-### Features im Detail
-- Auto-Save: Änderungen werden sofort übernommen
-- Unique Keys: Vermeidung von Duplikaten durch teamspezifische Keys
-- Responsive Design: Spalten-Layout passt sich an
+### Features in Detail
+- **Auto-Save**: Every throw is immediately saved to database
+- **Crash Recovery**: Data persists across sessions and crashes
+- **Unique Keys**: Avoids duplicates through team-specific keys
+- **Responsive Design**: Column layout adapts to screen size
 
-## 📊 Datenformat
+## 📊 Data Format
 
-### Vorrunde
+### Preliminary Round
 - Team: Team 1-10
-- Spieler: Spieler 1-5 pro Team
-- V1-V10: 10 Würfe "Auf die Vollen"
-- A1-A10: 10 Würfe "Abräumen"
-- Geschlecht: m/w
+- Player: Player 1-5 per team
+- V1-V10: 10 throws "full pins"
+- A1-A10: 10 throws "spare attempts"
+- Gender: m/f
 
-### Berechnung
-- **Volle**: Summe V1-V10
-- **Abräumen**: Summe A1-A10
-- **Gesamt**: Volle + Abräumen
+### Calculation
+- **Full Pins (Volle)**: Sum of V1-V10
+- **Spare Attempts (Abräumen)**: Sum of A1-A10
+- **Total (Gesamt)**: Full Pins + Spare Attempts
 
-## 🤝 Mitwirken
+## 🤝 Contributing
 
-Contributions sind willkommen! Bitte erstelle einen Pull Request oder öffne ein Issue.
+Contributions are welcome! Please create a Pull Request or open an Issue.
 
-## 📝 Lizenz
+## 📝 License
 
-Dieses Projekt ist Open Source.
+This project is Open Source.
 
-## 👨‍💻 Autor
+## 👨‍💻 Author
 
 Thomas (thomas1594)
 
-## 🎯 Zukünftige Features (optional)
+## 🎯 Future Features (optional)
 
-- [ ] Datenbank-Backend für permanente Speicherung
+- [ ] PDF export of results
+- [ ] Print view for tournament tables
+- [ ] Graphical statistics and charts
+- [ ] Import previous tournaments
+- [ ] Multi-user support
+- [ ] Cloud database backend
 
 ---
+
+**Good luck at the tournament! 🎳🏆**
 
 **Viel Erfolg beim Turnier! 🎳🏆**

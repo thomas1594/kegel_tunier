@@ -1,5 +1,5 @@
-# Streamlit App für ein Kegelturnier
-# Starten mit: streamlit run kegel.py
+# Streamlit App for a bowling tournament
+# Start with: streamlit run kegel.py
 
 import streamlit as st
 import pandas as pd
@@ -12,27 +12,38 @@ from functions import (
     update_player_name,
     update_geschlecht,
     calculate_totals,
-    get_team_scores
+    get_team_scores,
+    init_database,
+    load_from_db,
+    save_to_db,
+    reset_tournament
 )
 
 st.set_page_config(page_title="Kegelturnier", layout="wide")
 
 st.title("🎳 Kegelturnier – Live Auswertung")
 
-# Initialisiere Spielerdaten
+# Initialize database
+init_database()
+
+# Load data from database if available
+load_from_db()
+
+# Initialize player data (only if not loaded from DB)
 init_players()
 
 
 # -----------------------------
-# Eingabe
+# Input
 # -----------------------------
 st.header("✍️ Eingabe Spielergebnisse")
 
-# Sicherungs-Buttons oben
-col_save1, col_save2, col_save3 = st.columns([2, 2, 6])
+# Save buttons and reset at the top
+col_save1, col_save2, col_save3, col_save4 = st.columns([2, 2, 2, 4])
 with col_save1:
     if st.button("💾 Lokal Speichern", type="secondary"):
         try:
+            save_to_db()  # Save to database
             filename = save_to_excel()
             st.success(f"✅ Gespeichert als: {filename}")
         except Exception as e:
@@ -48,9 +59,15 @@ with col_save2:
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
+with col_save3:
+    if st.button("🔄 Neues Turnier", type="primary", help="Alle Daten zurücksetzen und neu starten"):
+        reset_tournament()
+        st.success("✅ Turnier zurückgesetzt!")
+        st.rerun()
+
 st.markdown("---")
 
-# Tabs für bessere Übersicht
+# Tabs for better overview
 tab1, tab2, tab3, tab4, tab5 = st.tabs(
     ["🎳 Vorrunde", "🥊 Halbfinale", "🏆 Finale", "📊 Auswertung", "⚙️ Teams bearbeiten"])
 
@@ -58,7 +75,7 @@ with tab1:
     st.header("📝 Vorrunde - Eingabe")
     st.info("🎳 Parallel-Eingabe für 2 Bahnen - Wähle je ein Team pro Bahn aus")
 
-    # Team-Auswahl für beide Bahnen (numerisch sortiert)
+    # Team selection for both lanes (sorted numerically)
     teams = sorted(st.session_state.players["Team"].unique(),
                    key=lambda x: int(x.split()[-1]) if x.split()[-1].isdigit() else 999)
 
@@ -69,24 +86,24 @@ with tab1:
             "Team auswählen:", teams, key="team_bahn1")
     with col_select2:
         st.markdown("### 🎯 Bahn 2")
-        # Versuche das nächste Team vorzuschlagen
+        # Try to suggest the next team
         default_idx = min(1, len(teams) - 1)
         selected_team_2 = st.selectbox(
             "Team auswählen:", teams, index=default_idx, key="team_bahn2")
 
     st.markdown("---")
 
-    # Beide Teams nebeneinander anzeigen
+    # Display both teams side by side
     bahn1_col, bahn2_col = st.columns(2)
 
-    # Bahn 1 - Team 1
+    # Lane 1 - Team 1
     with bahn1_col:
         st.markdown(f"### 🎳 Bahn 1: {selected_team_1}")
         team_data_1 = st.session_state.players[
             st.session_state.players["Team"] == selected_team_1
         ].copy()
 
-        # Erst alle VOLLE für alle Spieler
+        # First all VOLLE (full pins) for all players
         st.markdown("#### ⚪ VOLLE")
         for idx, row in team_data_1.iterrows():
             with st.expander(f"🎯 {row['Spieler']} - Volle", expanded=False):
@@ -109,7 +126,7 @@ with tab1:
 
         st.markdown("---")
 
-        # Dann alle ABRÄUMEN für alle Spieler
+        # Then all ABRÄUMEN (spare attempts) for all players
         st.markdown("#### 🔴 ABRÄUMEN")
         for idx, row in team_data_1.iterrows():
             with st.expander(f"🎯 {row['Spieler']} - Abräumen", expanded=False):
@@ -130,14 +147,14 @@ with tab1:
                         abr_sum += val
                 st.metric("Summe Abräumen", abr_sum)
 
-    # Bahn 2 - Team 2
+    # Lane 2 - Team 2
     with bahn2_col:
         st.markdown(f"### 🎳 Bahn 2: {selected_team_2}")
         team_data_2 = st.session_state.players[
             st.session_state.players["Team"] == selected_team_2
         ].copy()
 
-        # Erst alle VOLLE für alle Spieler
+        # First all VOLLE (full pins) for all players
         st.markdown("#### ⚪ VOLLE")
         for idx, row in team_data_2.iterrows():
             with st.expander(f"🎯 {row['Spieler']} - Volle", expanded=False):
@@ -155,12 +172,13 @@ with tab1:
                             step=1
                         )
                         st.session_state.players.at[idx, f"V{i}"] = val
+                        save_to_db()  # Auto-save to database
                         volle_sum += val
                 st.metric("Summe Volle", volle_sum)
 
         st.markdown("---")
 
-        # Dann alle ABRÄUMEN für alle Spieler
+        # Then all ABRÄUMEN (spare attempts) for all players
         st.markdown("#### 🔴 ABRÄUMEN")
         for idx, row in team_data_2.iterrows():
             with st.expander(f"🎯 {row['Spieler']} - Abräumen", expanded=False):
@@ -178,13 +196,14 @@ with tab1:
                             step=1
                         )
                         st.session_state.players.at[idx, f"A{i}"] = val
+                        save_to_db()  # Auto-save to database
                         abr_sum += val
                 st.metric("Summe Abräumen", abr_sum)
 
 with tab2:
     st.header("🥊 Halbfinale")
 
-    # Berechne Gesamtwerte
+    # Calculate totals
     df = st.session_state.players.copy()
     df = calculate_totals(df)
     team_scores = get_team_scores(df)
@@ -193,7 +212,7 @@ with tab2:
         # Initialisiere KO-Daten im Session State
         if "ko_data" not in st.session_state:
             ko_data = []
-            # Für Halbfinale: 4 Teams x 5 Spieler
+            # For semifinals: 4 teams x 5 players
             for team_id in range(1, 5):
                 for player_id in range(1, 6):
                     player_data = {
@@ -206,7 +225,7 @@ with tab2:
                     for i in range(1, 11):
                         player_data[f"A{i}"] = 0
                     ko_data.append(player_data)
-            # Für Finale: 2 Teams x 5 Spieler
+            # For finals: 2 teams x 5 players
             for team_id in range(1, 3):
                 for player_id in range(1, 6):
                     player_data = {
@@ -237,7 +256,7 @@ with tab2:
 
         st.markdown("---")
 
-        # Team-Auswahl für Halbfinale
+        # Team selection for semifinals
         hf_teams = [top4.loc[0, 'Team'], top4.loc[1, 'Team'],
                     top4.loc[2, 'Team'], top4.loc[3, 'Team']]
         hf_team_mapping = {
@@ -509,12 +528,12 @@ with tab3:
 with tab4:
     st.header("📊 Auswertung")
 
-    # Berechne Gesamtwerte
+    # Calculate totals
     df = st.session_state.players.copy()
     df = calculate_totals(df)
     team_scores = get_team_scores(df)
 
-    # Top 4 Plätze des Turniers
+    # Top 4 places of the tournament
     st.subheader("🏅 Turnier-Platzierung")
     if len(team_scores) >= 4:
         top4 = team_scores.head(4)
@@ -615,7 +634,7 @@ with tab5:
     teams = sorted(st.session_state.players["Team"].unique(),
                    key=lambda x: int(x.split()[-1]) if x.split()[-1].isdigit() else 999)
 
-    # Bestimme den vorausgewählten Index
+    # Determine the preselected index
     default_index = 0
     if "last_edited_team" in st.session_state and st.session_state.last_edited_team in teams:
         default_index = teams.index(st.session_state.last_edited_team)
@@ -645,7 +664,7 @@ with tab5:
     st.markdown("---")
     st.markdown("### Spielernamen und Geschlecht bearbeiten")
 
-    # Spieler des ausgewählten Teams
+    # Players of the selected team
     team_players = st.session_state.players[
         st.session_state.players["Team"] == selected_team_edit
     ].copy()

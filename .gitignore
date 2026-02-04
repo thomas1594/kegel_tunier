@@ -1,12 +1,33 @@
 # Virtual environment
 .venv/
+venv/
+ENV/
+env/
 
 # Python Cache
 __pycache__/
 *.pyc
+*.pyo
+*.py[cod]
+*$py.class
 
-# Streamlit Logs (optional)
+# Database
+kegelturnier.db
+*.db
+
+# Excel exports
+kegelturnier_*.xlsx
+
+# Streamlit Logs
 .streamlit/
 
-# OS Files (optional)
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS Files
 .DS_Store
+Thumbs.db
