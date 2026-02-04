@@ -209,7 +209,7 @@ with tab2:
     team_scores = get_team_scores(df)
 
     if len(team_scores) >= 4:
-        # Initialisiere KO-Daten im Session State
+        # Initialize KO data in session state
         if "ko_data" not in st.session_state:
             ko_data = []
             # For semifinals: 4 teams x 5 players
@@ -277,7 +277,7 @@ with tab2:
             with hf_col:
                 st.markdown(f"**🎳 Bahn {hf_idx + 1}: {team_name}** ({['1. Platz', '3. Platz'][hf_idx]})")
                 with st.expander("🎯 Auf die Vollen", expanded=False):
-                    # Spieler aus Vorrunde holen
+                    # Get players from preliminary round
                     team_players = st.session_state.players[
                         st.session_state.players["Team"] == team_name
                     ]["Spieler"].tolist()
@@ -348,11 +348,11 @@ with tab2:
         hf2_teams = [top4.loc[1, 'Team'], top4.loc[3, 'Team']]
 
         for hf_idx, (hf_col, team_name) in enumerate(zip([hf2_col1, hf2_col2], hf2_teams)):
-            hf_team_key = f"HF_Team_{hf_idx + 3}"  # 3 und 4
+            hf_team_key = f"HF_Team_{hf_idx + 3}"  # 3 and 4
             with hf_col:
                 st.markdown(f"**🎳 Bahn {hf_idx + 1}: {team_name}** ({['2. Platz', '4. Platz'][hf_idx]})")
                 with st.expander("🎯 Auf die Vollen", expanded=False):
-                    # Spieler aus Vorrunde holen
+                    # Get players from preliminary round
                     team_players = st.session_state.players[
                         st.session_state.players["Team"] == team_name
                     ]["Spieler"].tolist()
@@ -419,12 +419,12 @@ with tab2:
 with tab3:
     st.header("🏆 Finale")
 
-    # Berechne Halbfinale-Ergebnisse
+    # Calculate semifinal results
     if "ko_data" in st.session_state and not st.session_state.ko_data.empty:
         ko_df = st.session_state.ko_data.copy()
         ko_df = calculate_totals(ko_df)
 
-        # Gruppiere nach Teams und summiere
+        # Group by teams and sum
         hf_results = ko_df.groupby("Team").agg({
             "Volle": "sum",
             "Abräumen": "sum",
@@ -448,7 +448,7 @@ with tab3:
         if hf1_winner and hf2_winner:
             st.info(f"🥊 Gewinner HF1: {hf1_winner} vs Gewinner HF2: {hf2_winner}")
 
-            # Finale Eingabe
+            # Finals input
             finale_col1, finale_col2 = st.columns(2)
             finale_teams = [hf1_winner, hf2_winner]
 
@@ -459,7 +459,7 @@ with tab3:
                 with finale_col:
                     st.markdown(f"**🏆 Bahn {finale_idx + 1}: {original_team_name}**")
                     with st.expander("🎯 Auf die Vollen", expanded=False):
-                        # Spieler aus HF-Team holen
+                        # Get players from SF team
                         hf_players = st.session_state.ko_data[
                             st.session_state.ko_data["Team"] == hf_team_key
                         ]["Spieler"].tolist()
@@ -573,13 +573,13 @@ with tab4:
 
     st.markdown("---")
 
-    # Teamwertung (Vorrunde)
+    # Team ranking (preliminary round)
     st.subheader("🏆 Teamwertung (Vorrunde)")
     st.dataframe(team_scores, width='stretch')
 
     st.markdown("---")
 
-    # Beste Ergebnisse
+    # Best results
     st.subheader("🏆 Beste Einzelergebnisse")
     col1, col2, col3 = st.columns(3)
 
@@ -630,7 +630,7 @@ with tab4:
 with tab5:
     st.info("📝 Hier kannst du Team- und Spielernamen anpassen")
 
-    # Team-Auswahl (numerisch sortiert)
+    # Team selection (numerically sorted)
     teams = sorted(st.session_state.players["Team"].unique(),
                    key=lambda x: int(x.split()[-1]) if x.split()[-1].isdigit() else 999)
 
@@ -642,7 +642,7 @@ with tab5:
     selected_team_edit = st.selectbox(
         "Team zum Bearbeiten auswählen:", teams, index=default_index, key="edit_team_select")
 
-    # Teamname bearbeiten
+    # Edit team name
     st.markdown("### Team umbenennen")
     col1, col2 = st.columns([3, 1])
     with col1:
