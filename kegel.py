@@ -556,7 +556,7 @@ with tab4:
 
     # Teamwertung (Vorrunde)
     st.subheader("🏆 Teamwertung (Vorrunde)")
-    st.dataframe(team_scores, use_container_width=True)
+    st.dataframe(team_scores, width='stretch')
 
     st.markdown("---")
 
@@ -604,7 +604,7 @@ with tab4:
     ].reset_index(drop=True)
     top_players.index = top_players.index + 1
     top_players.index.name = "Rang"
-    st.dataframe(top_players, use_container_width=True)
+    st.dataframe(top_players, width='stretch')
 
     st.caption("💡 Live-Auswertung – Änderungen werden sofort übernommen")
 
