@@ -110,7 +110,10 @@ def create_excel_download():
 
 def update_player_name(idx, team):
     """Callback function for automatically saving player name."""
-    new_name = st.session_state[f"player_name_{team}_{idx}"]
+    key = f"player_name_{team}_{idx}"
+    if key not in st.session_state or "players" not in st.session_state:
+        return  # Skip if session was reset
+    new_name = st.session_state[key]
     st.session_state.players.at[idx, "Spieler"] = new_name
     st.session_state.last_edited_team = team
     save_to_db()  # Auto-save to database
@@ -118,7 +121,10 @@ def update_player_name(idx, team):
 
 def update_geschlecht(idx, team):
     """Callback function for automatically saving gender."""
-    new_geschlecht = st.session_state[f"geschlecht_edit_{team}_{idx}"]
+    key = f"geschlecht_edit_{team}_{idx}"
+    if key not in st.session_state or "players" not in st.session_state:
+        return  # Skip if session was reset
+    new_geschlecht = st.session_state[key]
     st.session_state.players.at[idx, "Geschlecht"] = new_geschlecht
     st.session_state.last_edited_team = team
     save_to_db()  # Auto-save to database
@@ -294,14 +300,16 @@ def reset_tournament():
     # Clear all data
     cursor.execute('DELETE FROM players')
     cursor.execute('DELETE FROM ko_data')
+    cursor.execute('DELETE FROM tournaments')
 
     conn.commit()
     conn.close()
 
-    # Reset session state
-    if "players" in st.session_state:
-        del st.session_state.players
-    if "ko_data" in st.session_state:
-        del st.session_state.ko_data
-    if "last_edited_team" in st.session_state:
-        del st.session_state.last_edited_team
+    # Clear all session state to ensure clean reset
+    keys_to_delete = list(st.session_state.keys())
+    for key in keys_to_delete:
+        del st.session_state[key]
+
+    # Reinitialize with fresh data
+    init_players()
+    save_to_db()

@@ -32,6 +32,13 @@ load_from_db()
 # Initialize player data (only if not loaded from DB)
 init_players()
 
+# Clean up old team_bahn2 widget keys on startup
+if "widgets_cleaned" not in st.session_state:
+    keys_to_remove = [key for key in st.session_state.keys() if key.startswith("team_bahn2_")]
+    for key in keys_to_remove:
+        del st.session_state[key]
+    st.session_state.widgets_cleaned = True
+
 
 # -----------------------------
 # Input
@@ -79,17 +86,51 @@ with tab1:
     teams = sorted(st.session_state.players["Team"].unique(),
                    key=lambda x: int(x.split()[-1]) if x.split()[-1].isdigit() else 999)
 
+    # Determine default indices based on last edited team
+    default_idx_1 = 0
+    default_idx_2 = min(1, len(teams) - 1)
+
+    if "last_edited_team" in st.session_state and st.session_state.last_edited_team in teams:
+        last_idx = teams.index(st.session_state.last_edited_team)
+        # Keep the last edited team selected on lane 1
+        default_idx_1 = last_idx
+
+        # For lane 2: find the next available team that's NOT the edited team
+        # Start from the beginning and skip the edited team
+        if len(teams) > 1:
+            # Try to select the team right after position 0 (which would be Team 2 originally)
+            candidate_idx = 0 if last_idx != 0 else 1
+            default_idx_2 = candidate_idx
+        else:
+            default_idx_2 = last_idx
+
     col_select1, col_select2 = st.columns(2)
     with col_select1:
         st.markdown("### 🎯 Bahn 1")
         selected_team_1 = st.selectbox(
-            "Team auswählen:", teams, key="team_bahn1")
+            "Team auswählen:", teams, index=default_idx_1, key="team_bahn1")
     with col_select2:
         st.markdown("### 🎯 Bahn 2")
-        # Try to suggest the next team
-        default_idx = min(1, len(teams) - 1)
+        # Filter out team 1 from team 2 options to prevent same team on both lanes
+        teams_lane2 = [t for t in teams if t != selected_team_1]
+        if not teams_lane2:  # If only one team exists, allow it
+            teams_lane2 = teams
+
+        # Calculate correct index for filtered list
+        if "last_edited_team" in st.session_state and st.session_state.last_edited_team in teams:
+            # After editing, select next team in filtered list
+            if default_idx_2 < len(teams) and teams[default_idx_2] in teams_lane2:
+                default_idx_2_adjusted = teams_lane2.index(teams[default_idx_2])
+            else:
+                default_idx_2_adjusted = 0
+        else:
+            # Default: select Team 2 (index 0 in filtered list since Team 1 is removed)
+            default_idx_2_adjusted = 0
+
+        # Use dynamic key based on selected_team_1 to reset when lane 1 changes
         selected_team_2 = st.selectbox(
-            "Team auswählen:", teams, index=default_idx, key="team_bahn2")
+            "Team auswählen:", teams_lane2, index=default_idx_2_adjusted,
+            key=f"team_bahn2_{selected_team_1.replace(' ', '_')}")
 
     st.markdown("---")
 
@@ -630,6 +671,55 @@ with tab4:
 with tab5:
     st.info("📝 Hier kannst du Team- und Spielernamen anpassen")
 
+    # Number of teams configuration
+    st.markdown("### ⚙️ Anzahl der Teams")
+    current_team_count = len(st.session_state.players["Team"].unique())
+
+    col_teams, col_apply = st.columns([3, 1])
+    with col_teams:
+        new_team_count = st.number_input(
+            "Wie viele Teams nehmen teil?",
+            min_value=2,
+            max_value=20,
+            value=current_team_count,
+            step=1,
+            key="team_count_input"
+        )
+    with col_apply:
+        st.write("")  # Spacing
+        st.write("")  # Spacing
+        if st.button("Anwenden", type="secondary"):
+            if new_team_count != current_team_count:
+                # Add or remove teams
+                if new_team_count > current_team_count:
+                    # Add new teams
+                    for team_id in range(current_team_count + 1, new_team_count + 1):
+                        for player_id in range(1, 6):
+                            new_row = {
+                                "Team": f"Team {team_id}",
+                                "Spieler": f"Spieler {player_id}",
+                                "Geschlecht": "m"
+                            }
+                            for i in range(1, 11):
+                                new_row[f"V{i}"] = 0
+                                new_row[f"A{i}"] = 0
+                            st.session_state.players = pd.concat([
+                                st.session_state.players,
+                                pd.DataFrame([new_row])
+                            ], ignore_index=True)
+                else:
+                    # Remove teams
+                    teams_to_keep = [f"Team {i}" for i in range(1, new_team_count + 1)]
+                    st.session_state.players = st.session_state.players[
+                        st.session_state.players["Team"].isin(teams_to_keep)
+                    ].reset_index(drop=True)
+
+                save_to_db()
+                st.success(f"✅ Teamanzahl auf {new_team_count} angepasst!")
+                st.rerun()
+
+    st.markdown("---")
+
     # Team selection (numerically sorted)
     teams = sorted(st.session_state.players["Team"].unique(),
                    key=lambda x: int(x.split()[-1]) if x.split()[-1].isdigit() else 999)
@@ -646,10 +736,11 @@ with tab5:
     st.markdown("### Team umbenennen")
     col1, col2 = st.columns([3, 1])
     with col1:
+        # Use dynamic key based on selected team to force reset when team changes
         new_team_name = st.text_input(
             "Neuer Teamname:",
-            value=selected_team_edit,
-            key=f"new_team_name_{selected_team_edit}"
+            placeholder=selected_team_edit,
+            key=f"team_rename_input_{selected_team_edit.replace(' ', '_')}"
         )
     with col2:
         if st.button("Team umbenennen", type="primary"):
@@ -657,7 +748,25 @@ with tab5:
                 st.session_state.players.loc[
                     st.session_state.players["Team"] == selected_team_edit, "Team"
                 ] = new_team_name
+                save_to_db()  # Save to database
+
+                # Set last_edited_team to the new name so default logic will select it
                 st.session_state.last_edited_team = new_team_name
+
+                # Clear team selection widgets to reset with new team name
+                if "team_bahn1" in st.session_state:
+                    del st.session_state.team_bahn1
+
+                # Clear all team_bahn2 variants to force reset on next render
+                keys_to_remove = [k for k in st.session_state.keys() if k.startswith("team_bahn2_")]
+                for k in keys_to_remove:
+                    del st.session_state[k]
+
+                # Clear all rename input fields
+                rename_keys = [k for k in st.session_state.keys() if k.startswith("team_rename_input_")]
+                for k in rename_keys:
+                    del st.session_state[k]
+
                 st.success(f"Team umbenannt zu '{new_team_name}'")
                 st.rerun()
 
