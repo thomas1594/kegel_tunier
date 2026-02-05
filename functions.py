@@ -8,6 +8,14 @@ from datetime import datetime
 import io
 import sqlite3
 import json
+import os
+
+# Database configuration
+DB_DIR = os.getenv('DB_DIR', 'data')
+DB_PATH = os.path.join(DB_DIR, 'kegelturnier.db')
+
+# Ensure data directory exists
+os.makedirs(DB_DIR, exist_ok=True)
 
 
 def init_players():
@@ -155,7 +163,7 @@ def get_team_scores(df):
 # Database functions
 def init_database():
     """Initialize SQLite database and create tables if they don't exist."""
-    conn = sqlite3.connect('kegelturnier.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
     # Create players table for preliminary round
@@ -212,7 +220,7 @@ def init_database():
 
 def load_from_db():
     """Load data from database into session state."""
-    conn = sqlite3.connect('kegelturnier.db')
+    conn = sqlite3.connect(DB_PATH)
 
     # Load players data
     players_df = pd.read_sql_query('''
@@ -247,7 +255,7 @@ def load_from_db():
 
 def save_to_db():
     """Save current session state data to database."""
-    conn = sqlite3.connect('kegelturnier.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
     # Clear existing data
@@ -294,7 +302,7 @@ def save_to_db():
 
 def reset_tournament():
     """Reset tournament data for a fresh start."""
-    conn = sqlite3.connect('kegelturnier.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
     # Clear all data
