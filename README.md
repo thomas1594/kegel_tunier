@@ -54,6 +54,47 @@ source .venv/bin/activate  # Linux/Mac
 pip install -r requirements.txt
 ```
 
+### 🐳 Docker Setup
+
+The app can also be run with Docker. See [DOCKER.md](DOCKER.md) for full details.
+
+#### With Docker Compose (recommended)
+
+```bash
+# Start the app
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop the app
+docker-compose down
+```
+
+The app is then available at `http://localhost:8501`.
+
+#### With plain Docker
+
+```bash
+# Build the image
+docker build -t kegelturnier .
+
+# Run the container with a persistent volume
+docker run -d \
+  --name kegelturnier \
+  -p 8501:8501 \
+  -v kegelturnier-data:/app/data \
+  kegelturnier
+```
+
+#### Database & environment variables
+
+The SQLite database is stored in the `kegelturnier-data` Docker volume so it persists across container restarts. The database directory can be configured via the `DB_DIR` environment variable (default: `data`, in the container: `/app/data`).
+
+#### Docker in WSL 2
+
+`install-docker-wsl.sh` installs Docker Engine and the Compose plugin inside WSL 2.
+
 ## 💻 Usage
 
 ### Start Application
@@ -96,11 +137,17 @@ The application opens automatically in your browser at `http://localhost:8501`
 
 ```
 kegel_tunier/
-├── kegel.py              # Main application (Streamlit UI)
-├── functions.py          # Helper functions
-├── requirements.txt      # Python dependencies
-├── kegelturnier.db       # SQLite database (auto-created)
-└── README.md            # This file
+├── kegel.py                # Main application (Streamlit UI)
+├── functions.py            # Helper functions
+├── requirements.txt        # Python dependencies
+├── data/
+│   └── kegelturnier.db     # SQLite database (auto-created)
+├── Dockerfile              # Docker image definition
+├── docker-compose.yml      # Docker Compose service configuration
+├── .dockerignore           # Files excluded from the Docker build
+├── install-docker-wsl.sh   # Docker installation script for WSL 2
+├── DOCKER.md               # Detailed Docker documentation
+└── README.md               # This file
 ```
 
 ## 🔧 Technical Details
