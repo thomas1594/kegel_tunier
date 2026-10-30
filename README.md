@@ -29,7 +29,7 @@ A Streamlit-based web application for managing and live-scoring bowling tourname
 - Edit team and player names
 - Gender assignment (m/f)
 - Excel export (local file & browser download)
-- **Auto-save**: Every throw is automatically saved to SQLite database
+- **Auto-save**: Changes are saved automatically to SQLite after each interaction
 - **Crash-proof**: Data persists across sessions and browser refreshes
 - Reset tournament for new competitions
 
@@ -142,6 +142,7 @@ kegel_tunier/
 ├── requirements.txt        # Python dependencies
 ├── data/
 │   └── kegelturnier.db     # SQLite database (auto-created)
+├── tests/                  # Unit and integration tests (unittest)
 ├── Dockerfile              # Docker image definition
 ├── docker-compose.yml      # Docker Compose service configuration
 ├── .dockerignore           # Files excluded from the Docker build
@@ -168,10 +169,17 @@ kegel_tunier/
 - **KO Data**: Separate structure for semifinals and finals
 
 ### Features in Detail
-- **Auto-Save**: Every throw is immediately saved to database
+- **Auto-Save**: All changes are written once per interaction in a single SQLite transaction (upsert instead of delete/re-insert)
 - **Crash Recovery**: Data persists across sessions and crashes
-- **Unique Keys**: Avoids duplicates through team-specific keys
+- **Stable IDs**: Players are linked to semifinal/final entries by database id, so renaming players does not break KO results
+- **Tie-Break**: Rankings are sorted by total, then spare pins ("Abräumen"), then full pins ("Volle")
 - **Responsive Design**: Column layout adapts to screen size
+
+### Tests
+```bash
+python -m unittest discover -s tests -v
+```
+Includes unit tests for ranking/tie-break, team resizing, KO slot syncing and Excel export, plus an end-to-end persistence test using Streamlit's `AppTest`.
 
 ## 📊 Data Format
 
@@ -186,6 +194,12 @@ kegel_tunier/
 - **Full Pins (Volle)**: Sum of V1-V10
 - **Spare Attempts (Abräumen)**: Sum of A1-A10
 - **Total (Gesamt)**: Full Pins + Spare Attempts
+- **Tie-break**: More Abräumen wins; if still tied, more Volle wins; then team/player name for a stable order
+
+### Excel export
+Both "Lokal Speichern" and "Excel Download" create a workbook with the sheets
+`Alle Würfe`, `Team-Ranking` and `Spieler-Ranking`. The local file is written to
+the data directory (`DB_DIR`), so it is also persisted inside Docker.
 
 ## 🤝 Contributing
 

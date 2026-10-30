@@ -33,7 +33,9 @@ docker run -d \
 
 ## Datenbank
 
-Die SQLite-Datenbank wird im Docker Volume `kegelturnier-data` gespeichert und bleibt auch nach Container-Neustarts erhalten.
+Die SQLite-Datenbank wird im Docker Volume `kegelturnier-data` (Mount: `/app/data`) gespeichert und bleibt auch nach Container-Neustarts erhalten. Auch die per "Lokal Speichern" erzeugten Excel-Dateien landen in diesem Verzeichnis.
+
+Der Container hat einen Healthcheck auf `http://localhost:8501/_stcore/health`; der Status ist mit `docker inspect --format '{{.State.Health.Status}}' kegelturnier-app` sichtbar.
 
 ### Datenbank-Backup erstellen
 

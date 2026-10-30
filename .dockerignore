@@ -17,3 +17,6 @@ ENV/
 *.xlsx
 *.db
 README.md
+
+# Tests
+tests/
